@@ -125,6 +125,7 @@ type Service struct {
 	OrganizationDataSvc        OrganizationDataSvc
 	AdminDataSvc               AdminDataSvc
 	JiraDataSvc                JiraDataSvc
+	LinearDataSvc              LinearDataSvc
 	SubscriptionDataSvc        SubscriptionDataSvc
 	RetroTemplateDataSvc       RetroTemplateDataSvc
 	ColorLegendTemplateDataSvc ColorLegendTemplateDataSvc
@@ -232,6 +233,14 @@ type JiraDataSvc interface {
 	GetInstanceByID(ctx context.Context, instanceId string) (thunderdome.JiraInstance, error)
 	CreateInstance(ctx context.Context, userId string, host string, clientMail string, accessToken string, jiraDataCenter bool) (thunderdome.JiraInstance, error)
 	UpdateInstance(ctx context.Context, instanceId string, host string, clientMail string, accessToken string) (thunderdome.JiraInstance, error)
+	DeleteInstance(ctx context.Context, instanceId string) error
+}
+
+type LinearDataSvc interface {
+	FindInstancesByUserID(ctx context.Context, userId string) ([]thunderdome.LinearInstance, error)
+	GetInstanceByID(ctx context.Context, instanceId string) (thunderdome.LinearInstance, error)
+	CreateInstance(ctx context.Context, userId string, label string, workspaceURLKey string, accessToken string) (thunderdome.LinearInstance, error)
+	UpdateInstance(ctx context.Context, instanceId string, label string, workspaceURLKey string, accessToken string) (thunderdome.LinearInstance, error)
 	DeleteInstance(ctx context.Context, instanceId string) error
 }
 

@@ -2688,6 +2688,30 @@ type RootTranslation = {
 	 */
 	modalCreateJiraInstance: string
 	/**
+	 * C​o​n​n​e​c​t​ ​L​i​n​e​a​r​ ​W​o​r​k​s​p​a​c​e
+	 */
+	modalCreateLinearInstance: string
+	/**
+	 * W​o​r​k​s​p​a​c​e​ ​L​a​b​e​l
+	 */
+	linearWorkspaceLabel: string
+	/**
+	 * e​.​g​.​,​ ​A​c​m​e​ ​E​n​g​i​n​e​e​r​i​n​g
+	 */
+	linearWorkspaceLabelPlaceholder: string
+	/**
+	 * A​ ​f​r​i​e​n​d​l​y​ ​n​a​m​e​ ​t​o​ ​i​d​e​n​t​i​f​y​ ​t​h​i​s​ ​w​o​r​k​s​p​a​c​e​.
+	 */
+	linearWorkspaceLabelHelp: string
+	/**
+	 * L​i​n​e​a​r​ ​A​P​I​ ​K​e​y
+	 */
+	linearApiKeyLabel: string
+	/**
+	 * C​r​e​a​t​e​ ​a​ ​P​e​r​s​o​n​a​l​ ​A​P​I​ ​k​e​y​ ​a​t
+	 */
+	linearApiKeyHelp: string
+	/**
 	 * U​p​d​a​t​e​ ​P​o​k​e​r​ ​S​e​t​t​i​n​g​s
 	 */
 	modalUpdatePokerSettings: string
@@ -5674,6 +5698,30 @@ export type TranslationFunctions = {
 	 * Create Jira Instance
 	 */
 	modalCreateJiraInstance: () => LocalizedString
+	/**
+	 * Connect Linear Workspace
+	 */
+	modalCreateLinearInstance: () => LocalizedString
+	/**
+	 * Workspace Label
+	 */
+	linearWorkspaceLabel: () => LocalizedString
+	/**
+	 * e.g., Acme Engineering
+	 */
+	linearWorkspaceLabelPlaceholder: () => LocalizedString
+	/**
+	 * A friendly name to identify this workspace.
+	 */
+	linearWorkspaceLabelHelp: () => LocalizedString
+	/**
+	 * Linear API Key
+	 */
+	linearApiKeyLabel: () => LocalizedString
+	/**
+	 * Create a Personal API key at
+	 */
+	linearApiKeyHelp: () => LocalizedString
 	/**
 	 * Update Poker Settings
 	 */

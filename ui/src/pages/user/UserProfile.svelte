@@ -11,6 +11,7 @@
   import CreateApiKey from '../../components/user/CreateApiKey.svelte';
   import DeleteConfirmation from '../../components/global/DeleteConfirmation.svelte';
   import CreateJiraInstance from '../../components/jira/CreateJiraInstance.svelte';
+  import CreateLinearInstance from '../../components/linear/CreateLinearInstance.svelte';
   import SolidButton from '../../components/global/SolidButton.svelte';
   import UserSubscriptionsList from '../../components/subscription/UserSubscriptionsList.svelte';
   import BooleanDisplay from '../../components/global/BooleanDisplay.svelte';
@@ -34,6 +35,12 @@
     client_mail: string;
   }
 
+  interface LinearInstance {
+    id: string;
+    label: string;
+    workspace_url_key: string;
+  }
+
   interface Props {
     xfetch: ApiClient;
     router: any;
@@ -46,6 +53,7 @@
   let userCredential = $state(null);
   let apiKeys = $state<ApiKey[]>([]);
   let jiraInstances = $state<JiraInstance[]>([]);
+  let linearInstances = $state<LinearInstance[]>([]);
   let showApiKeyCreate = $state(false);
   let showAccountDeletion = $state(false);
 
@@ -173,6 +181,31 @@
       });
   }
 
+  function getLinearInstances() {
+    xfetch(`/api/users/${$user.id}/linear-instances`)
+      .then(res => res.json())
+      .then(function (result) {
+        linearInstances = result.data;
+      })
+      .catch(function (error) {
+        if (Array.isArray(error)) {
+          error[1].json().then(function (result: any) {
+            if (result.error === 'REQUIRES_SUBSCRIBED_USER') {
+              user.update({
+                ...$user,
+                subscribed: false,
+              } as SessionUser);
+              notifications.danger('subscription(s) expired');
+            } else {
+              notifications.danger('error getting Linear workspaces');
+            }
+          });
+        } else {
+          notifications.danger('error getting Linear workspaces');
+        }
+      });
+  }
+
   function deleteApiKey(apk: string) {
     return function () {
       xfetch(`/api/users/${$user.id}/apikeys/${apk}`, {
@@ -230,9 +263,44 @@
   }
 
   let showJiraInstanceCreate = $state(false);
+  let showLinearInstanceCreate = $state(false);
 
   function toggleCreateJiraInstance() {
     showJiraInstanceCreate = !showJiraInstanceCreate;
+  }
+
+  function toggleCreateLinearInstance() {
+    showLinearInstanceCreate = !showLinearInstanceCreate;
+  }
+
+  function deleteLinearInstance(id: string) {
+    return function () {
+      xfetch(`/api/users/${$user.id}/linear-instances/${id}`, {
+        method: 'DELETE',
+      })
+        .then(res => res.json())
+        .then(function () {
+          notifications.success('Deleted Linear workspace');
+          getLinearInstances();
+        })
+        .catch(function (error) {
+          if (Array.isArray(error)) {
+            error[1].json().then(function (result: any) {
+              if (result.error === 'REQUIRES_SUBSCRIBED_USER') {
+                user.update({
+                  ...$user,
+                  subscribed: false,
+                } as SessionUser);
+                notifications.danger('subscription(s) expired');
+              } else {
+                notifications.danger('Failed to delete Linear workspace');
+              }
+            });
+          } else {
+            notifications.danger('Failed to delete Linear workspace');
+          }
+        });
+    };
   }
 
   function deleteJiraInstance(id: string) {
@@ -283,6 +351,7 @@
 
     if ((SubscriptionsEnabled && $user.subscribed) || (!SubscriptionsEnabled && $user.rank !== 'GUEST')) {
       getJiraInstances();
+      getLinearInstances();
     }
   });
 </script>
@@ -537,6 +606,88 @@
           </div>
         </div>
       </div>
+
+      <div class="ms-8 mt-8">
+        <div class="flex w-full">
+          <div class="flex-1">
+            <h2 class="text-2xl md:text-3xl font-semibold font-rajdhani uppercase mb-4 dark:text-white">
+              Linear Workspaces
+            </h2>
+          </div>
+          {#if (SubscriptionsEnabled && $user.subscribed) || (!SubscriptionsEnabled && $user.rank !== 'GUEST')}
+            <div class="flex-1">
+              <div class="text-right">
+                <HollowButton onClick={toggleCreateLinearInstance} testid="linearinstance-create">
+                  Add Linear Workspace
+                </HollowButton>
+              </div>
+            </div>
+          {/if}
+        </div>
+        <div class="flex flex-col">
+          <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+            <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
+              <div class="shadow overflow-hidden border-b border-gray-200 dark:border-gray-700 sm:rounded-lg">
+                {#if SubscriptionsEnabled && !$user.subscribed}
+                  <FeatureSubscribeBanner salesPitch="Setup Linear to import your issues in Poker Planning." />
+                {:else if !SubscriptionsEnabled && $user.rank === 'GUEST'}
+                  <p class="bg-sky-300 p-4 rounded text-gray-700 font-bold">
+                    Must be logged in to setup Linear integrations
+                  </p>
+                {:else}
+                  <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead class="bg-gray-50 dark:bg-gray-800">
+                      <tr>
+                        <th
+                          scope="col"
+                          class="px-6 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                        >
+                          Workspace
+                        </th>
+                        <th
+                          scope="col"
+                          class="px-6 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                        >
+                          URL Key
+                        </th>
+                        <th scope="col" class="relative px-6 py-3">
+                          <span class="sr-only">{$LL.actions()}</span>
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody
+                      class="bg-white dark:bg-gray-700 divide-y divide-gray-200 dark:divide-gray-800 dark:text-white"
+                    >
+                      {#each linearInstances as li, i}
+                        <tr
+                          class:bg-slate-100={i % 2 !== 0}
+                          class:dark:bg-gray-800={i % 2 !== 0}
+                          data-testid="linearinstance"
+                          data-linearinstanceid={li.id}
+                        >
+                          <td class="px-6 py-4 whitespace-nowrap" data-testid="linear-label">{li.label}</td>
+                          <td class="px-6 py-4 whitespace-nowrap font-mono text-sm" data-testid="linear-urlkey">
+                            {li.workspace_url_key || '—'}
+                          </td>
+                          <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <HollowButton
+                              color="red"
+                              onClick={deleteLinearInstance(li.id)}
+                              testid="linear-delete"
+                            >
+                              {$LL.delete()}
+                            </HollowButton>
+                          </td>
+                        </tr>
+                      {/each}
+                    </tbody>
+                  </table>
+                {/if}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     {#if !OIDCAuthEnabled && !LdapEnabled && !HeaderAuthEnabled}
@@ -554,6 +705,14 @@
     <CreateJiraInstance
       toggleClose={toggleCreateJiraInstance}
       handleCreate={getJiraInstances}
+      {notifications}
+      {xfetch}
+    />
+  {/if}
+  {#if showLinearInstanceCreate}
+    <CreateLinearInstance
+      toggleClose={toggleCreateLinearInstance}
+      handleCreate={getLinearInstances}
       {notifications}
       {xfetch}
     />

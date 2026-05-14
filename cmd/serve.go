@@ -5,6 +5,7 @@ import (
 	_ "embed"
 
 	jiraData "github.com/StevenWeathers/thunderdome-planning-poker/internal/db/jira"
+	linearData "github.com/StevenWeathers/thunderdome-planning-poker/internal/db/linear"
 	"github.com/StevenWeathers/thunderdome-planning-poker/internal/db/project"
 
 	"github.com/StevenWeathers/thunderdome-planning-poker/internal/webhook/subscription"
@@ -141,6 +142,7 @@ func serve(embedUseOS bool) {
 	adminService := &admin.Service{DB: d.DB, Logger: logger}
 	subscriptionDataSvc := &subscriptionData.Service{DB: d.DB, Logger: logger}
 	jiraDataSvc := &jiraData.Service{DB: d.DB, Logger: logger, AESHashKey: d.Config.AESHashkey}
+	linearDataSvc := &linearData.Service{DB: d.DB, Logger: logger, AESHashKey: d.Config.AESHashkey}
 	retroTemplateDataSvc := &retrotemplate.Service{DB: d.DB, Logger: logger}
 	projectDataSvc := &project.Service{DB: d.DB, Logger: logger}
 
@@ -262,6 +264,7 @@ func serve(embedUseOS bool) {
 		AdminDataSvc:               adminService,
 		SubscriptionDataSvc:        subscriptionDataSvc,
 		JiraDataSvc:                jiraDataSvc,
+		LinearDataSvc:              linearDataSvc,
 		RetroTemplateDataSvc:       retroTemplateDataSvc,
 		ColorLegendTemplateDataSvc: storyboardService,
 		SubscriptionSvc:            subscriptionService,

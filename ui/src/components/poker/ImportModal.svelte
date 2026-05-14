@@ -4,6 +4,7 @@
   import CsvImport from './CsvImport.svelte';
   import JiraImport from './JiraImport.svelte';
   import JQLImport from '../jira/JQLImport.svelte';
+  import LinearImport from '../linear/LinearImport.svelte';
   import StoryFromGameImport from './StoryFromGameImport.svelte';
   import { AppConfig } from '../../config';
   import { user } from '../../stores';
@@ -32,6 +33,7 @@
   }: Props = $props();
 
   let showJiraCloudSearch = $state(false);
+  let showLinearSearch = $state(false);
   let showGameImport = $state(false);
   let showStoryboardImport = $state(false);
 
@@ -75,7 +77,7 @@
     </div>
 
     <!-- Internal Import Section -->
-    {#if !showJiraCloudSearch}
+    {#if !showJiraCloudSearch && !showLinearSearch}
       <div class="mb-8">
         <div
           class="bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-950/20 dark:to-blue-950/20 rounded-xl p-6 border border-indigo-100 dark:border-indigo-800/30"
@@ -148,7 +150,34 @@
         </div>
       </div>
 
+      <!-- Linear Section -->
       {#if !showJiraCloudSearch}
+        <div class="mb-8">
+          <div
+            class="bg-gradient-to-r from-purple-50 to-fuchsia-50 dark:from-purple-950/20 dark:to-fuchsia-950/20 rounded-xl p-6 border border-purple-100 dark:border-purple-800/30"
+          >
+            <div class="flex items-center gap-3 mb-4">
+              <div class="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center">
+                <FileText class="w-4 h-4 text-white" />
+              </div>
+              <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Import from Linear</h3>
+            </div>
+
+            <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+              <LinearImport
+                {notifications}
+                {xfetch}
+                handleImport={importStory}
+                on:instance_selected={() => {
+                  showLinearSearch = true;
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      {/if}
+
+      {#if !showJiraCloudSearch && !showLinearSearch}
         <!-- File Import Section -->
         <div class="space-y-6">
           <div

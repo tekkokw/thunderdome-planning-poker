@@ -192,6 +192,13 @@ func New(apiService Service, FSS fs.FS, HFS http.FileSystem) *Service {
 	router.Handle("DELETE "+prefix+"/api/users/{userId}/jira-instances/{instanceId}", a.userOnly(a.entityUserOnly(a.subscribedEntityUserOnly(a.handleJiraInstanceDelete()))))
 	router.Handle("POST "+prefix+"/api/users/{userId}/jira-instances/{instanceId}/jql-story-search", a.userOnly(a.entityUserOnly(a.subscribedEntityUserOnly(a.handleJiraStoryJQLSearch()))))
 
+	router.Handle("GET "+prefix+"/api/users/{userId}/linear-instances", a.userOnly(a.entityUserOnly(a.subscribedEntityUserOnly(a.handleGetUserLinearInstances()))))
+	router.Handle("POST "+prefix+"/api/users/{userId}/linear-instances", a.userOnly(a.entityUserOnly(a.subscribedEntityUserOnly(a.handleLinearInstanceCreate()))))
+	router.Handle("PUT "+prefix+"/api/users/{userId}/linear-instances/{instanceId}", a.userOnly(a.entityUserOnly(a.subscribedEntityUserOnly(a.handleLinearInstanceUpdate()))))
+	router.Handle("DELETE "+prefix+"/api/users/{userId}/linear-instances/{instanceId}", a.userOnly(a.entityUserOnly(a.subscribedEntityUserOnly(a.handleLinearInstanceDelete()))))
+	router.Handle("GET "+prefix+"/api/users/{userId}/linear-instances/{instanceId}/teams", a.userOnly(a.entityUserOnly(a.subscribedEntityUserOnly(a.handleLinearTeamsList()))))
+	router.Handle("POST "+prefix+"/api/users/{userId}/linear-instances/{instanceId}/issue-search", a.userOnly(a.entityUserOnly(a.subscribedEntityUserOnly(a.handleLinearIssueSearch()))))
+
 	if a.Config.ExternalAPIEnabled {
 		router.Handle("GET "+prefix+"/api/users/{userId}/apikeys", a.userOnly(a.entityUserOnly(a.handleUserAPIKeys())))
 		router.Handle("POST "+prefix+"/api/users/{userId}/apikeys", a.userOnly(a.verifiedUserOnly(a.handleAPIKeyGenerate())))
