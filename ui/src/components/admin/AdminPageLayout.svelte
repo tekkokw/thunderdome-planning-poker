@@ -61,6 +61,13 @@
             enabled: true,
           },
           {
+            name: 'Branding',
+            icon: Settings,
+            label: 'Branding',
+            path: appRoutes.adminBranding,
+            enabled: true,
+          },
+          {
             name: 'Projects',
             icon: Package,
             label: $LL.projects(),

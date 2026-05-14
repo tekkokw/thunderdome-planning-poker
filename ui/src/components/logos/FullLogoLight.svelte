@@ -1,11 +1,26 @@
 <script lang="ts">
+  import { branding } from '../../stores';
+  import { PathPrefix } from '../../config';
+
   interface Props {
     class?: string;
   }
 
   let { class: klass = '' }: Props = $props();
+
+  // Prefer the dark-mode logo if uploaded, otherwise fall back to the main logo,
+  // otherwise the hardcoded SVG.
+  const variant = $derived($branding.has_logo_dark ? 'dark' : 'main');
+  const hasUploadedLogo = $derived($branding.has_logo_dark || $branding.has_logo_main);
 </script>
 
+{#if hasUploadedLogo}
+  <img
+    src={`${PathPrefix}/api/branding/logo?variant=${variant}`}
+    alt={$branding.brand_name || 'Logo'}
+    class={klass}
+  />
+{:else}
 <svg
   class={klass}
   height="100%"
@@ -109,3 +124,4 @@
     </g>
   </g>
 </svg>
+{/if}

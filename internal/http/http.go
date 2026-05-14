@@ -319,6 +319,14 @@ func New(apiService Service, FSS fs.FS, HFS http.FileSystem) *Service {
 	router.Handle("GET "+prefix+"/api/teams/{teamId}/metrics", a.userOnly(a.teamUserOnly(a.handleTeamMetrics())))
 	// admin
 	router.Handle("GET "+prefix+"/api/admin/stats", a.userOnly(a.adminOnly(a.handleAppStats())))
+	router.Handle("GET "+prefix+"/api/admin/application-settings", a.userOnly(a.adminOnly(a.handleGetApplicationSettings())))
+	router.Handle("PUT "+prefix+"/api/admin/application-settings", a.userOnly(a.adminOnly(a.handleUpdateApplicationSettings())))
+	router.Handle("PUT "+prefix+"/api/admin/branding", a.userOnly(a.adminOnly(a.handleUpdateBranding())))
+	router.Handle("DELETE "+prefix+"/api/admin/branding", a.userOnly(a.adminOnly(a.handleResetBranding())))
+	router.Handle("POST "+prefix+"/api/admin/branding/logo", a.userOnly(a.adminOnly(a.handleUploadBrandingLogo())))
+	router.Handle("DELETE "+prefix+"/api/admin/branding/logo", a.userOnly(a.adminOnly(a.handleDeleteBrandingLogo())))
+	router.Handle("GET "+prefix+"/api/branding", a.handleGetBranding())
+	router.Handle("GET "+prefix+"/api/branding/logo", a.handleGetBrandingLogo())
 	router.Handle("GET "+prefix+"/api/admin/admin-users", a.userOnly(a.adminOnly(a.handleListAdminUsers())))
 	router.Handle("GET "+prefix+"/api/admin/users", a.userOnly(a.adminOnly(a.handleGetRegisteredUsers())))
 	router.Handle("POST "+prefix+"/api/admin/users", a.userOnly(a.adminOnly(a.handleUserCreate())))
@@ -718,7 +726,24 @@ func (s *Service) handleIndex(filesystem fs.FS, uiConfig thunderdome.UIConfig) h
 	ActiveAlerts = s.AlertDataSvc.GetActiveAlerts(context.Background()) // prime the active alerts cache
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		uiConfig.ActiveAlerts = ActiveAlerts // get the latest alerts from memory
+		// Per-request copy: the closure captures uiConfig by value, but its
+		// fields are reference-shared across goroutines, so mutating it
+		// directly would leak between requests.
+		reqConfig := uiConfig
+		reqConfig.ActiveAlerts = ActiveAlerts
+		// AllowRegistration is (env flag) AND (db registration_open) so admin
+		// toggles take effect without restart. Pre-bootstrap (no users yet) we
+		// always allow registration so the first admin can sign up even if the
+		// DB flag was somehow flipped to false.
+		if s.Config.AllowRegistration {
+			open, openErr := s.AdminDataSvc.IsRegistrationOpen(r.Context())
+			if openErr == nil && !open {
+				count, _ := s.AdminDataSvc.CountActiveAccounts(r.Context())
+				reqConfig.AppConfig.AllowRegistration = count == 0
+			} else {
+				reqConfig.AppConfig.AllowRegistration = true
+			}
+		}
 		nonce := secure.CSPNonce(r.Context())
 
 		if s.Config.EmbedUseOS {
@@ -730,7 +755,7 @@ func (s *Service) handleIndex(filesystem fs.FS, uiConfig thunderdome.UIConfig) h
 			Nonce    string
 		}
 		td := templateData{
-			UIConfig: uiConfig,
+			UIConfig: reqConfig,
 			Nonce:    nonce,
 		}
 

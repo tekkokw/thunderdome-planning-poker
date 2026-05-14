@@ -1,3 +1,12 @@
+:root {
+  /* Brand color defaults. The frontend branding store overrides these at
+     runtime when an admin has set custom colors. Use the RGB triplet form so
+     Tailwind's <alpha-value> templates work. */
+  --brand-primary-rgb: 255 221 87;  /* default: yellow-thunder #ffdd57 */
+  --brand-accent-rgb:  99 102 241;  /* default: indigo-500 */
+  --brand-dark-rgb:    17 24 39;    /* default: slate-900 */
+}
+
 [type='checkbox'],
 [type='radio'] {
   --tw-shadow: 0 0 #0000;

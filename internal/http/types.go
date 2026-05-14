@@ -172,6 +172,15 @@ type AdminDataSvc interface {
 	UpdateSupportTicket(ctx context.Context, ticket *thunderdome.SupportTicket) error
 	DeleteSupportTicket(ctx context.Context, ticketID string) error
 	ListAdminUsers(ctx context.Context, limit int, offset int) ([]*thunderdome.User, int, error)
+	GetApplicationSettings(ctx context.Context) (thunderdome.ApplicationSettings, error)
+	UpdateApplicationSettings(ctx context.Context, registrationOpen bool, actorUserID string) (thunderdome.ApplicationSettings, error)
+	IsRegistrationOpen(ctx context.Context) (bool, error)
+	CountActiveAccounts(ctx context.Context) (int, error)
+	GetBranding(ctx context.Context) (thunderdome.Branding, error)
+	UpdateBrandingMeta(ctx context.Context, actorUserID string, brandName, primaryColor, accentColor, darkColor *string) (thunderdome.Branding, error)
+	SetLogo(ctx context.Context, actorUserID string, variant thunderdome.LogoVariant, data []byte, contentType string) error
+	GetLogo(ctx context.Context, variant thunderdome.LogoVariant) (thunderdome.BrandLogo, error)
+	ResetBranding(ctx context.Context, actorUserID string) (thunderdome.Branding, error)
 }
 
 type AlertDataSvc interface {

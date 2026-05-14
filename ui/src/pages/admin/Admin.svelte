@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
 
   import AdminPageLayout from '../../components/admin/AdminPageLayout.svelte';
+  import WorkspaceSettingsCard from '../../components/admin/WorkspaceSettingsCard.svelte';
   import HollowButton from '../../components/global/HollowButton.svelte';
   import { user } from '../../stores';
   import LL from '../../i18n/i18n-svelte';
@@ -493,6 +494,8 @@
 </svelte:head>
 
 <AdminPageLayout activePage="admin">
+  <WorkspaceSettingsCard {xfetch} {notifications} />
+
   <!-- Loading State -->
   {#if isLoading}
     <div class="flex items-center justify-center py-8">

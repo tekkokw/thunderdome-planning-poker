@@ -14,7 +14,7 @@
   import type { ApiClient } from './types/apiclient';
   import type { SessionUser } from './types/user';
   import type { NotificationService } from './types/notifications';
-  import { dir, user } from './stores';
+  import { branding, dir, user } from './stores';
 
   import Notifications from './components/global/Notifications.svelte';
   import GlobalHeader from './components/global/GlobalHeader.svelte';
@@ -56,6 +56,7 @@
   import AdminSubscriptions from './pages/admin/Subscriptions.svelte';
   import AdminSubscription from './pages/admin/Subscription.svelte';
   import AdminEstimationScales from './pages/admin/poker/EstimationScales.svelte';
+  import AdminBranding from './pages/admin/Branding.svelte';
   import { setLocale } from './i18n/i18n-svelte';
   import { detectLocale } from './i18n/i18n-util';
   import Confirmation from './pages/subscription/Confirmation.svelte';
@@ -93,6 +94,10 @@
   const selectedLocale = detectedLocale;
   loadLocale(selectedLocale);
   setLocale(selectedLocale);
+
+  // Load workspace branding (colors + logo presence) on app boot. Best-effort:
+  // failures fall back to the CSS defaults already in app.css.
+  branding.load();
 
   let activeWarrior: SessionUser | undefined = $state();
   user.subscribe((w: any) => {
@@ -674,6 +679,14 @@
       };
     });
   }
+
+  router.on(`${appRoutes.adminBranding}`, () => {
+    currentPage = {
+      route: AdminBranding,
+      params: {},
+      name: 'admin-branding',
+    };
+  });
 
   if (FeatureProject) {
     router.on(`${appRoutes.adminProjects}`, () => {

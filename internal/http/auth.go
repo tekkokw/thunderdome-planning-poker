@@ -402,6 +402,17 @@ func (s *Service) handleUserRegistration() http.HandlerFunc {
 			s.Failure(w, r, http.StatusBadRequest, Errorf(EINVALID, "USER_REGISTRATION_DISABLED"))
 			return
 		}
+		// Admin can additionally close registration at runtime. We allow the
+		// first signup through even when the DB flag is false, so a fresh
+		// install can still onboard its initial admin.
+		dbOpen, dbOpenErr := s.AdminDataSvc.IsRegistrationOpen(ctx)
+		if dbOpenErr == nil && !dbOpen {
+			accountCount, _ := s.AdminDataSvc.CountActiveAccounts(ctx)
+			if accountCount > 0 {
+				s.Failure(w, r, http.StatusBadRequest, Errorf(EINVALID, "USER_REGISTRATION_DISABLED"))
+				return
+			}
+		}
 
 		body, bodyErr := io.ReadAll(r.Body)
 		if bodyErr != nil {

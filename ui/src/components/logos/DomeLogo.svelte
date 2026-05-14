@@ -1,4 +1,7 @@
 <script lang="ts">
+  import { branding } from '../../stores';
+  import { PathPrefix } from '../../config';
+
   interface Props {
     class?: string;
   }
@@ -6,6 +9,13 @@
   let { class: klass = '' }: Props = $props();
 </script>
 
+{#if $branding.has_logo_main}
+  <img
+    src={`${PathPrefix}/api/branding/logo?variant=main`}
+    alt={$branding.brand_name || 'Logo'}
+    class={klass}
+  />
+{:else}
 <svg
   class={klass}
   height="100%"
@@ -35,3 +45,4 @@
     </g>
   </g>
 </svg>
+{/if}

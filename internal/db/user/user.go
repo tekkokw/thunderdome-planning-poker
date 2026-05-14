@@ -209,7 +209,13 @@ func (d *Service) CreateUserGuest(ctx context.Context, userName string) (*thunde
 	return &thunderdome.User{ID: userID, Name: userName, Avatar: "robohash", NotificationsEnabled: true, Locale: "en", GravatarHash: db.CreateGravatarHash(userID), Type: thunderdome.GuestUserType}, nil
 }
 
-// CreateUserRegistered adds a new registered user
+// CreateUserRegistered adds a new registered user.
+//
+// Bootstrap rule: if no REGISTERED or ADMIN user exists yet, the new account is
+// created as ADMIN instead. This makes the very first signup the workspace
+// owner without manual SQL. The check is a non-transactional count, so two
+// simultaneous first-registrants could both win — acceptable for an internal
+// product where that race is vanishingly unlikely.
 func (d *Service) CreateUserRegistered(ctx context.Context, userName string, userEmail string, userPassword string, activeUserID string) (newUser *thunderdome.User, verifyID string, registerErr error) {
 	hashedPassword, hashErr := db.HashSaltPassword(userPassword)
 	if hashErr != nil {
@@ -218,6 +224,15 @@ func (d *Service) CreateUserRegistered(ctx context.Context, userName string, use
 
 	var verificationID string
 	userType := thunderdome.RegisteredUserType
+	var existingCount int
+	if err := d.DB.QueryRowContext(ctx,
+		`SELECT COUNT(*) FROM thunderdome.users WHERE type IN ('REGISTERED', 'ADMIN');`,
+	).Scan(&existingCount); err != nil {
+		return nil, "", fmt.Errorf("create registered user bootstrap count error: %v", err)
+	}
+	if existingCount == 0 {
+		userType = thunderdome.AdminUserType
+	}
 	avatar := "robohash"
 	sanitizedEmail := db.SanitizeEmail(userEmail)
 	user := &thunderdome.User{
