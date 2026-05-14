@@ -1,0 +1,107 @@
+# Dokploy production deployment for Thunderdome (rebranded "agilecentral").
+#
+# Required env vars (set in Dokploy's "Environment" tab — never commit):
+#   TRAEFIK_HOST           Public hostname, e.g. agilecentral.example.com
+#   APP_DOMAIN             Cookie domain. Must match TRAEFIK_HOST for cookies to stick.
+#   DB_PASSWORD            Postgres password.
+#   COOKIE_HASHKEY         >= 32 random chars. Signs session cookies. Rotate => logs everyone out.
+#   CONFIG_AES_HASHKEY     >= 32 random chars. Encrypts Jira/Linear API tokens at rest.
+#                          Rotating breaks decryption of existing stored tokens.
+#   SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_SENDER  Real SMTP provider creds.
+#
+# Generate the two secret keys (run on your laptop, not in CI):
+#   openssl rand -base64 48
+
+services:
+  agilecentral:
+    build:
+      context: .
+      dockerfile: ./build/Dockerfile
+    restart: unless-stopped
+    expose:
+      - "8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - internal
+      - dokploy-network
+    environment:
+      # --- Required ---
+      APP_DOMAIN: "${APP_DOMAIN:?APP_DOMAIN is required}"
+      COOKIE_HASHKEY: "${COOKIE_HASHKEY:?COOKIE_HASHKEY is required (>=32 random chars)}"
+      CONFIG_AES_HASHKEY: "${CONFIG_AES_HASHKEY:?CONFIG_AES_HASHKEY is required (>=32 random chars)}"
+      DB_PASS: "${DB_PASSWORD:?DB_PASSWORD is required}"
+      # --- DB connection ---
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_NAME: agilecentral
+      DB_USER: agileadmin
+      DB_SSLMODE: disable
+      # --- HTTPS / cookies (Traefik terminates TLS) ---
+      COOKIE_SECURE: "true"
+      HTTP_SECURE_PROTOCOL: "true"
+      # --- SMTP ---
+      SMTP_ENABLED: "${SMTP_ENABLED:-true}"
+      SMTP_HOST: "${SMTP_HOST:?SMTP_HOST is required (e.g. smtp.sendgrid.net)}"
+      SMTP_PORT: "${SMTP_PORT:-587}"
+      SMTP_SECURE: "${SMTP_SECURE:-true}"
+      SMTP_SKIP_TLS_VERIFY: "${SMTP_SKIP_TLS_VERIFY:-false}"
+      SMTP_USER: "${SMTP_USER:-}"
+      SMTP_PASS: "${SMTP_PASS:-}"
+      SMTP_SENDER: "${SMTP_SENDER:?SMTP_SENDER is required (e.g. no-reply@example.com)}"
+      SMTP_AUTH: "${SMTP_AUTH:-PLAIN}"
+      # --- Optional feature toggles ---
+      CONFIG_ALLOW_GUESTS: "${CONFIG_ALLOW_GUESTS:-true}"
+      CONFIG_ALLOW_REGISTRATION: "${CONFIG_ALLOW_REGISTRATION:-true}"
+    # No container-level healthcheck: the image is FROM scratch and has no
+    # curl/wget/nc. Traefik probes /healthz via the healthcheck.path label below
+    # and routes around the container if it stops responding.
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=dokploy-network"
+      # HTTPS router
+      - "traefik.http.routers.agilecentral.rule=Host(`${TRAEFIK_HOST}`)"
+      - "traefik.http.routers.agilecentral.entrypoints=websecure"
+      - "traefik.http.routers.agilecentral.tls=true"
+      - "traefik.http.routers.agilecentral.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.agilecentral.service=agilecentral"
+      # HTTP → HTTPS redirect
+      - "traefik.http.routers.agilecentral-http.rule=Host(`${TRAEFIK_HOST}`)"
+      - "traefik.http.routers.agilecentral-http.entrypoints=web"
+      - "traefik.http.routers.agilecentral-http.middlewares=agilecentral-redirect"
+      - "traefik.http.middlewares.agilecentral-redirect.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.agilecentral-redirect.redirectscheme.permanent=true"
+      # Service port
+      - "traefik.http.services.agilecentral.loadbalancer.server.port=8080"
+      # Traefik probes /healthz; the binary returns 200 once DB + migrations are ready.
+      - "traefik.http.services.agilecentral.loadbalancer.healthcheck.path=/healthz"
+      - "traefik.http.services.agilecentral.loadbalancer.healthcheck.interval=30s"
+      - "traefik.http.services.agilecentral.loadbalancer.healthcheck.timeout=5s"
+
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: agilecentral
+      POSTGRES_USER: agileadmin
+      POSTGRES_PASSWORD: "${DB_PASSWORD:?DB_PASSWORD is required}"
+    volumes:
+      - agilecentral_data:/var/lib/postgresql/data
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agileadmin -d agilecentral"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+networks:
+  internal:
+    driver: bridge
+  dokploy-network:
+    external: true
+
+volumes:
+  agilecentral_data:
