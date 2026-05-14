@@ -214,7 +214,7 @@ type AuthDataSvc interface {
 
 type CheckinDataSvc interface {
 	CheckinList(ctx context.Context, teamID string, Date string) ([]*thunderdome.TeamCheckin, error)
-	CheckinCreate(ctx context.Context, teamID string, userId string, checkinDate string, yesterday string, today string, blockers string, discuss string, goalsMet bool) error
+	CheckinCreate(ctx context.Context, teamID string, userId string, checkinDate string, yesterday string, today string, blockers string, discuss string, goalsMet bool, linearCycleID string) error
 	CheckinUpdate(ctx context.Context, checkinId string, yesterday string, today string, blockers string, discuss string, goalsMet bool) error
 	CheckinDelete(ctx context.Context, checkinId string) error
 	CheckinComment(ctx context.Context, teamID string, checkinId string, userId string, comment string) error
@@ -242,6 +242,10 @@ type LinearDataSvc interface {
 	CreateInstance(ctx context.Context, userId string, label string, workspaceURLKey string, accessToken string) (thunderdome.LinearInstance, error)
 	UpdateInstance(ctx context.Context, instanceId string, label string, workspaceURLKey string, accessToken string) (thunderdome.LinearInstance, error)
 	DeleteInstance(ctx context.Context, instanceId string) error
+	GetTeamLink(ctx context.Context, teamID string) (thunderdome.TeamLinearLink, error)
+	UpsertTeamLink(ctx context.Context, teamID, instanceID, linearTeamID, linearTeamKey, linearTeamName string) (thunderdome.TeamLinearLink, error)
+	DeleteTeamLink(ctx context.Context, teamID string) error
+	GetTeamLinkInstance(ctx context.Context, teamID string) (thunderdome.TeamLinearLink, thunderdome.LinearInstance, error)
 }
 
 type OrganizationDataSvc interface {

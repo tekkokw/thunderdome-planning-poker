@@ -34,6 +34,7 @@
   import PokerSettings from '../../components/poker/PokerSettings.svelte';
   import RetroSettings from '../../components/retro/RetroSettings.svelte';
   import ColorLegendTemplatesList from '../../components/colorlegendtemplate/ColorLegendTemplatesList.svelte';
+  import TeamLinearLinkSettings from '../../components/linear/TeamLinearLinkSettings.svelte';
 
   import type { NotificationService } from '../../types/notifications';
   import type { ApiClient } from '../../types/apiclient';
@@ -831,6 +832,10 @@
       {/if}
     </div>
   {/if}
+
+  <div class="mt-8">
+    <TeamLinearLinkSettings {xfetch} {notifications} {teamId} isEntityAdmin={isAdmin} />
+  </div>
 
   {#if isAdmin && !organizationId && !departmentId}
     <div class="w-full text-center mt-8">

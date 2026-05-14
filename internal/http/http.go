@@ -199,6 +199,11 @@ func New(apiService Service, FSS fs.FS, HFS http.FileSystem) *Service {
 	router.Handle("GET "+prefix+"/api/users/{userId}/linear-instances/{instanceId}/teams", a.userOnly(a.entityUserOnly(a.subscribedEntityUserOnly(a.handleLinearTeamsList()))))
 	router.Handle("POST "+prefix+"/api/users/{userId}/linear-instances/{instanceId}/issue-search", a.userOnly(a.entityUserOnly(a.subscribedEntityUserOnly(a.handleLinearIssueSearch()))))
 
+	router.Handle("GET "+prefix+"/api/teams/{teamId}/linear-link", a.userOnly(a.teamUserOnly(a.handleGetTeamLinearLink())))
+	router.Handle("PUT "+prefix+"/api/teams/{teamId}/linear-link", a.userOnly(a.teamUserOnly(a.teamAdminOnly(a.handleUpsertTeamLinearLink()))))
+	router.Handle("DELETE "+prefix+"/api/teams/{teamId}/linear-link", a.userOnly(a.teamUserOnly(a.teamAdminOnly(a.handleDeleteTeamLinearLink()))))
+	router.Handle("GET "+prefix+"/api/teams/{teamId}/linear-link/active-cycle", a.userOnly(a.teamUserOnly(a.handleTeamLinearActiveCycle())))
+
 	if a.Config.ExternalAPIEnabled {
 		router.Handle("GET "+prefix+"/api/users/{userId}/apikeys", a.userOnly(a.entityUserOnly(a.handleUserAPIKeys())))
 		router.Handle("POST "+prefix+"/api/users/{userId}/apikeys", a.userOnly(a.verifiedUserOnly(a.handleAPIKeyGenerate())))

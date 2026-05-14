@@ -867,6 +867,7 @@
         {xfetch}
         {notifications}
         {teamPrefix}
+        {teamId}
         {selectedDate}
         timeZone={timezone}
       />
@@ -877,6 +878,7 @@
         {handleCheckin}
         {handleCheckinEdit}
         {teamPrefix}
+        {teamId}
         {xfetch}
         {notifications}
         {selectedDate}

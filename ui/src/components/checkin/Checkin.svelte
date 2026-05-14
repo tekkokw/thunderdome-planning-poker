@@ -26,6 +26,7 @@
     notifications: NotificationService;
     xfetch: ApiClient;
     teamPrefix?: string;
+    teamId?: string;
     selectedDate?: string;
     timeZone?: string;
   }
@@ -42,9 +43,57 @@
     notifications,
     xfetch,
     teamPrefix = '',
+    teamId = '',
     selectedDate = '',
     timeZone = '',
   }: Props = $props();
+
+  interface CycleIssue {
+    id: string;
+    identifier: string;
+    title: string;
+    url: string;
+    state?: { name?: string } | null;
+  }
+  interface LinearCycle {
+    id: string;
+    number: number;
+    name?: string;
+    startsAt?: string;
+    endsAt?: string;
+    progress: number;
+  }
+  let linearCycle = $state<LinearCycle | null>(null);
+  let linearIssues = $state<CycleIssue[]>([]);
+  let linearTeamKey = $state('');
+
+  function daysUntil(iso?: string): string {
+    if (!iso) return '';
+    const end = new Date(iso).getTime();
+    const days = Math.ceil((end - Date.now()) / (1000 * 60 * 60 * 24));
+    if (days < 0) return `${-days}d overdue`;
+    if (days === 0) return 'ends today';
+    if (days === 1) return '1d left';
+    return `${days}d left`;
+  }
+
+  function loadActiveCycle() {
+    if (!teamId) return;
+    xfetch(`/api/teams/${teamId}/linear-link/active-cycle`)
+      .then(res => {
+        if (res.status === 404) return null;
+        return res.json();
+      })
+      .then(result => {
+        if (!result?.data) return;
+        linearCycle = result.data.cycle;
+        linearIssues = result.data.issues || [];
+        linearTeamKey = result.data.team?.key ?? '';
+      })
+      .catch(() => {
+        // Linear integration is optional context; never block the checkin form on it.
+      });
+  }
 
   let userSubscribed = $state(false);
   let lastCheckin = $state({
@@ -66,6 +115,7 @@
       goalsMet,
       checkinDate: selectedDate,
       timeZone,
+      linearCycleId: linearCycle?.id ?? '',
     };
 
     try {
@@ -145,6 +195,7 @@
     if (!AppConfig.SubscriptionsEnabled || (AppConfig.SubscriptionsEnabled && $user.subscribed)) {
       userSubscribed = true;
       getLastCheckin();
+      loadActiveCycle();
     } else {
       userSubscribed = false;
     }
@@ -175,6 +226,58 @@
 
   <form onsubmit={onSubmit} name="teamCheckin" class="space-y-6">
     {#if userSubscribed}
+      {#if linearCycle}
+        <div
+          class="bg-gradient-to-r from-purple-50 to-fuchsia-50 dark:from-purple-950/30 dark:to-fuchsia-950/30 rounded-2xl border border-purple-200 dark:border-purple-800/40 overflow-hidden"
+        >
+          <div class="px-6 py-4 border-b border-purple-200 dark:border-purple-800/40 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center">
+                <span class="text-white text-xs font-bold">L</span>
+              </div>
+              <div>
+                <h2 class="text-base font-semibold text-purple-900 dark:text-purple-200">
+                  {linearTeamKey} cycle {linearCycle.number}{linearCycle.name ? ` — ${linearCycle.name}` : ''}
+                </h2>
+                <p class="text-xs text-purple-700 dark:text-purple-300">
+                  {Math.round(linearCycle.progress * 100)}% complete
+                  {linearCycle.endsAt ? ` · ${daysUntil(linearCycle.endsAt)}` : ''}
+                </p>
+              </div>
+            </div>
+          </div>
+          {#if linearIssues.length > 0}
+            <div class="px-6 py-4">
+              <p class="text-xs uppercase tracking-wider font-medium text-purple-700 dark:text-purple-300 mb-2">
+                Your open issues in this cycle
+              </p>
+              <ul class="space-y-1">
+                {#each linearIssues as issue}
+                  <li class="flex items-center gap-2 text-sm">
+                    <a
+                      href={issue.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="font-mono text-xs font-bold text-purple-700 dark:text-purple-300 hover:underline"
+                    >
+                      {issue.identifier}
+                    </a>
+                    <span class="text-slate-700 dark:text-slate-300">{issue.title}</span>
+                    {#if issue.state?.name}
+                      <span class="ms-auto text-xs text-slate-500 dark:text-slate-400">{issue.state.name}</span>
+                    {/if}
+                  </li>
+                {/each}
+              </ul>
+            </div>
+          {:else}
+            <div class="px-6 py-3 text-sm text-purple-700 dark:text-purple-300">
+              No open issues assigned to you in this cycle.
+            </div>
+          {/if}
+        </div>
+      {/if}
+
       {#if lastCheckin.id !== '' && lastCheckin.id !== checkinId}
         <!-- Last Check-in Card -->
         <div

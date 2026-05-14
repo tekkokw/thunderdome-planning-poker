@@ -147,6 +147,7 @@ func (d *CheckinService) CheckinCreate(
 	checkinDate string,
 	yesterday string, today string, blockers string, discuss string,
 	goalsMet bool,
+	linearCycleID string,
 ) error {
 	var userCount int
 	// target user must be on team to check in
@@ -167,10 +168,11 @@ func (d *CheckinService) CheckinCreate(
 	sanitizedDiscuss := d.HTMLSanitizerPolicy.Sanitize(discuss)
 
 	if _, err := d.DB.ExecContext(ctx, `INSERT INTO thunderdome.team_checkin
-		(team_id, user_id, yesterday, today, blockers, discuss, goals_met, checkin_date)
+		(team_id, user_id, yesterday, today, blockers, discuss, goals_met, checkin_date, linear_cycle_id)
 		VALUES (
 			$1, $2, $3, $4, $5, $6, $7,
-			COALESCE($8::date, CURRENT_DATE)
+			COALESCE($8::date, CURRENT_DATE),
+			$9
 		);
 		`,
 		teamID,
@@ -181,6 +183,7 @@ func (d *CheckinService) CheckinCreate(
 		sanitizedDiscuss,
 		goalsMet,
 		sql.NullString{String: checkinDate, Valid: checkinDate != ""},
+		linearCycleID,
 	); err != nil {
 		return fmt.Errorf("checkin create error: %v", err)
 	}
