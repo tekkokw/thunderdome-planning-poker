@@ -166,6 +166,10 @@ type checkinCreateRequestBody struct {
 	Discuss       string `json:"discuss"`
 	GoalsMet      bool   `json:"goalsMet"`
 	LinearCycleID string `json:"linearCycleId"`
+	// PostedByUserID is set server-side (never trusted from the client) when
+	// the authenticated principal differs from UserID — i.e. a service account
+	// or admin posting on someone's behalf.
+	PostedByUserID string `json:"postedByUserId"`
 }
 
 // handleCheckinCreate handles creating a team user checkin
@@ -257,6 +261,21 @@ func (s *Service) handleCheckinCreate(tc *checkin.Service) http.HandlerFunc {
 					}
 				}
 			}
+		}
+
+		// Attribution: if the authenticated principal isn't the checkin subject,
+		// only an admin or a service account may post on their behalf. Record
+		// who actually submitted it. Self-submission leaves PostedByUserID empty.
+		if c.UserID != sessionUserID {
+			userType := ctx.Value(contextKeyUserType).(string)
+			isSA, saErr := s.AdminDataSvc.IsServiceAccount(ctx, sessionUserID)
+			if userType != thunderdome.AdminUserType && (saErr != nil || !isSA) {
+				s.Failure(w, r, http.StatusForbidden, Errorf(EUNAUTHORIZED, "CANNOT_POST_CHECKIN_FOR_OTHER_USER"))
+				return
+			}
+			c.PostedByUserID = sessionUserID
+		} else {
+			c.PostedByUserID = ""
 		}
 
 		normalizedBody, marshalErr := json.Marshal(c)

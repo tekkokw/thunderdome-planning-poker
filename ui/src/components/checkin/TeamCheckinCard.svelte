@@ -3,6 +3,7 @@
 
   import ActionsMenu from '../global/ActionsMenu.svelte';
   import UserAvatar from '../user/UserAvatar.svelte';
+  import BotBadge from '../global/BotBadge.svelte';
   import Comments from './Comments.svelte';
   import LL from '../../i18n/i18n-svelte';
 
@@ -100,11 +101,24 @@
             <div class="min-w-0 flex-1">
               <h3
                 id={`checkin-user-${checkin.user.id}`}
-                class="truncate text-lg font-semibold text-gray-900 dark:text-white sm:text-xl"
+                class="truncate text-lg font-semibold text-gray-900 dark:text-white sm:text-xl flex items-center gap-2"
                 data-testid="checkin-username"
               >
                 {checkin.user.name}
+                {#if checkin.user.isServiceAccount}
+                  <BotBadge />
+                {/if}
               </h3>
+              {#if checkin.postedBy && checkin.postedBy.id !== checkin.user.id}
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 flex items-center gap-1">
+                  posted by
+                  {#if checkin.postedBy.isServiceAccount}
+                    <BotBadge label={checkin.postedBy.name} />
+                  {:else}
+                    <span class="font-medium">{checkin.postedBy.name}</span>
+                  {/if}
+                </p>
+              {/if}
               <div class="mt-2 space-y-2 text-xs font-semibold uppercase tracking-wide">
                 <div class="flex flex-nowrap items-center gap-2">
                   {#if checkin.goalsMet}

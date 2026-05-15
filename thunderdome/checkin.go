@@ -12,6 +12,9 @@ type TeamCheckin struct {
 	CreatedDate string            `json:"createdDate"`
 	UpdatedDate string            `json:"updatedDate"`
 	Comments    []*CheckinComment `json:"comments"`
+	// PostedBy is set only when the checkin was submitted by someone other than
+	// the subject (e.g. a service account posting on a teammate's behalf).
+	PostedBy *TeamUser `json:"postedBy,omitempty"`
 }
 
 // CheckinComment A checkin comment by a user

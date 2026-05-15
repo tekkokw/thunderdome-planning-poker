@@ -181,6 +181,10 @@ type AdminDataSvc interface {
 	SetLogo(ctx context.Context, actorUserID string, variant thunderdome.LogoVariant, data []byte, contentType string) error
 	GetLogo(ctx context.Context, variant thunderdome.LogoVariant) (thunderdome.BrandLogo, error)
 	ResetBranding(ctx context.Context, actorUserID string) (thunderdome.Branding, error)
+	CreateServiceAccount(ctx context.Context, name string, email string) (*thunderdome.ServiceAccount, error)
+	ListServiceAccounts(ctx context.Context) ([]*thunderdome.ServiceAccount, error)
+	IsServiceAccount(ctx context.Context, userID string) (bool, error)
+	DeleteServiceAccount(ctx context.Context, id string) error
 }
 
 type AlertDataSvc interface {
@@ -223,7 +227,7 @@ type AuthDataSvc interface {
 
 type CheckinDataSvc interface {
 	CheckinList(ctx context.Context, teamID string, Date string) ([]*thunderdome.TeamCheckin, error)
-	CheckinCreate(ctx context.Context, teamID string, userId string, checkinDate string, yesterday string, today string, blockers string, discuss string, goalsMet bool, linearCycleID string) error
+	CheckinCreate(ctx context.Context, teamID string, userId string, checkinDate string, yesterday string, today string, blockers string, discuss string, goalsMet bool, linearCycleID string, postedByUserID string) error
 	CheckinUpdate(ctx context.Context, checkinId string, yesterday string, today string, blockers string, discuss string, goalsMet bool) error
 	CheckinDelete(ctx context.Context, checkinId string) error
 	CheckinComment(ctx context.Context, teamID string, checkinId string, userId string, comment string) error

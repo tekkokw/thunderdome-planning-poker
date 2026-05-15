@@ -42,4 +42,17 @@ type User struct {
 	Disabled             bool      `json:"disabled"`
 	Theme                string    `json:"theme"`
 	Picture              string    `json:"picture"`
+	IsServiceAccount     bool      `json:"isServiceAccount"`
+}
+
+// ServiceAccount is a non-human user (an agent/bot) that authenticates only
+// via API keys. It is a regular user row with is_service_account = true and no
+// auth_credential.
+type ServiceAccount struct {
+	ID          string    `json:"id"`
+	Name        string    `json:"name"`
+	Email       string    `json:"email"`
+	CreatedDate time.Time `json:"createdDate"`
+	UpdatedDate time.Time `json:"updatedDate"`
+	APIKeys     []*APIKey `json:"apiKeys,omitempty"`
 }

@@ -34,19 +34,22 @@ func (d *CheckinService) CheckinList(ctx context.Context, teamID string, date st
 	}
 
 	rows, err := d.DB.QueryContext(ctx, `SELECT
- 		tc.id, u.id, u.name, u.email, u.avatar, COALESCE(u.picture, ''),
+ 		tc.id, u.id, u.name, u.email, u.avatar, COALESCE(u.picture, ''), u.is_service_account,
  		COALESCE(tc.yesterday, ''), COALESCE(tc.today, ''),
  		COALESCE(tc.blockers, ''), coalesce(tc.discuss, ''),
 		tc.goals_met, tc.checkin_date, tc.created_date, tc.updated_date,
+		pb.id, pb.name, COALESCE(pb.email, ''), COALESCE(pb.avatar, ''),
+		COALESCE(pb.picture, ''), COALESCE(pb.is_service_account, false),
  		COALESCE(
 			json_agg(tcc ORDER BY tcc.created_date) FILTER (WHERE tcc.id IS NOT NULL), '[]'
 		) AS comments
 		FROM thunderdome.team_checkin tc
 		LEFT JOIN thunderdome.users u ON tc.user_id = u.id
+		LEFT JOIN thunderdome.users pb ON tc.posted_by_user_id = pb.id
 		LEFT JOIN thunderdome.team_checkin_comment tcc ON tcc.checkin_id = tc.id
 		WHERE tc.team_id = $1
 		AND tc.checkin_date = $2
-		GROUP BY tc.id, u.id
+		GROUP BY tc.id, u.id, pb.id
 		ORDER BY tc.created_date ASC;
 		`,
 		teamID,
@@ -59,6 +62,8 @@ func (d *CheckinService) CheckinList(ctx context.Context, teamID string, date st
 			var checkin thunderdome.TeamCheckin
 			var user thunderdome.TeamUser
 			var commentsVal string
+			var pbID, pbName, pbEmail, pbAvatar, pbPicture sql.NullString
+			var pbIsSA sql.NullBool
 
 			if err := rows.Scan(
 				&checkin.ID,
@@ -67,6 +72,7 @@ func (d *CheckinService) CheckinList(ctx context.Context, teamID string, date st
 				&user.GravatarHash,
 				&user.Avatar,
 				&user.PictureURL,
+				&user.IsServiceAccount,
 				&checkin.Yesterday,
 				&checkin.Today,
 				&checkin.Blockers,
@@ -75,12 +81,30 @@ func (d *CheckinService) CheckinList(ctx context.Context, teamID string, date st
 				&checkin.CheckinDate,
 				&checkin.CreatedDate,
 				&checkin.UpdatedDate,
+				&pbID,
+				&pbName,
+				&pbEmail,
+				&pbAvatar,
+				&pbPicture,
+				&pbIsSA,
 				&commentsVal,
 			); err != nil {
 				return nil, err
 			} else {
 				user.GravatarHash = db.CreateGravatarHash(user.GravatarHash)
 				checkin.User = &user
+
+				// Only surface PostedBy when a different principal submitted it.
+				if pbID.Valid && pbID.String != "" && pbID.String != user.ID {
+					checkin.PostedBy = &thunderdome.TeamUser{
+						ID:               pbID.String,
+						Name:             pbName.String,
+						GravatarHash:     db.CreateGravatarHash(pbEmail.String),
+						Avatar:           pbAvatar.String,
+						PictureURL:       pbPicture.String,
+						IsServiceAccount: pbIsSA.Bool,
+					}
+				}
 
 				comments := make([]*thunderdome.CheckinComment, 0)
 				jsonErr := json.Unmarshal([]byte(commentsVal), &comments)
@@ -148,6 +172,7 @@ func (d *CheckinService) CheckinCreate(
 	yesterday string, today string, blockers string, discuss string,
 	goalsMet bool,
 	linearCycleID string,
+	postedByUserID string,
 ) error {
 	var userCount int
 	// target user must be on team to check in
@@ -168,11 +193,11 @@ func (d *CheckinService) CheckinCreate(
 	sanitizedDiscuss := d.HTMLSanitizerPolicy.Sanitize(discuss)
 
 	if _, err := d.DB.ExecContext(ctx, `INSERT INTO thunderdome.team_checkin
-		(team_id, user_id, yesterday, today, blockers, discuss, goals_met, checkin_date, linear_cycle_id)
+		(team_id, user_id, yesterday, today, blockers, discuss, goals_met, checkin_date, linear_cycle_id, posted_by_user_id)
 		VALUES (
 			$1, $2, $3, $4, $5, $6, $7,
 			COALESCE($8::date, CURRENT_DATE),
-			$9
+			$9, $10
 		);
 		`,
 		teamID,
@@ -184,6 +209,7 @@ func (d *CheckinService) CheckinCreate(
 		goalsMet,
 		sql.NullString{String: checkinDate, Valid: checkinDate != ""},
 		linearCycleID,
+		sql.NullString{String: postedByUserID, Valid: postedByUserID != ""},
 	); err != nil {
 		return fmt.Errorf("checkin create error: %v", err)
 	}

@@ -16,6 +16,7 @@ export type TeamUser = {
   role: string;
   pictureUrl?: string;
   country?: string;
+  isServiceAccount?: boolean;
 };
 
 export type TeamCheckin = {
@@ -30,6 +31,7 @@ export type TeamCheckin = {
   updatedDate: string;
   user: Array<TeamUser>;
   yesterday: string;
+  postedBy?: TeamUser;
 };
 
 export type CheckinComment = {

@@ -20,13 +20,14 @@ type UserTeam struct {
 }
 
 type TeamUser struct {
-	ID           string `json:"id"`
-	Name         string `json:"name"`
-	Email        string `json:"email"`
-	Role         string `json:"role"`
-	Avatar       string `json:"avatar"`
-	GravatarHash string `json:"gravatarHash"`
-	PictureURL   string `json:"pictureUrl"`
+	ID               string `json:"id"`
+	Name             string `json:"name"`
+	Email            string `json:"email"`
+	Role             string `json:"role"`
+	Avatar           string `json:"avatar"`
+	GravatarHash     string `json:"gravatarHash"`
+	PictureURL       string `json:"pictureUrl"`
+	IsServiceAccount bool   `json:"isServiceAccount"`
 }
 
 type TeamUserInvite struct {

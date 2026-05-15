@@ -63,6 +63,7 @@ const appRoutes = {
   adminRetroTemplates: `${adminPrefix}/retro-templates`,
   adminProjects: `${adminPrefix}/projects`,
   adminBranding: `${adminPrefix}/branding`,
+  adminServiceAccounts: `${adminPrefix}/service-accounts`,
   subscriptionPricing: `${PathPrefix}/subscriptions/pricing`,
   subscriptionConfirmation: `${PathPrefix}/subscriptions/confirmation`,
   privacyPolicy: `${PathPrefix}/privacy-policy`,

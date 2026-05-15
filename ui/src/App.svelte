@@ -57,6 +57,7 @@
   import AdminSubscription from './pages/admin/Subscription.svelte';
   import AdminEstimationScales from './pages/admin/poker/EstimationScales.svelte';
   import AdminBranding from './pages/admin/Branding.svelte';
+  import AdminServiceAccounts from './pages/admin/ServiceAccounts.svelte';
   import { setLocale } from './i18n/i18n-svelte';
   import { detectLocale } from './i18n/i18n-util';
   import Confirmation from './pages/subscription/Confirmation.svelte';
@@ -685,6 +686,14 @@
       route: AdminBranding,
       params: {},
       name: 'admin-branding',
+    };
+  });
+
+  router.on(`${appRoutes.adminServiceAccounts}`, () => {
+    currentPage = {
+      route: AdminServiceAccounts,
+      params: {},
+      name: 'admin-service-accounts',
     };
   });
 

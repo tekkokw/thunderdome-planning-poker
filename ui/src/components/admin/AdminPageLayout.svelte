@@ -68,6 +68,13 @@
             enabled: true,
           },
           {
+            name: 'Service Accounts',
+            icon: Key,
+            label: 'Service Accounts',
+            path: appRoutes.adminServiceAccounts,
+            enabled: true,
+          },
+          {
             name: 'Projects',
             icon: Package,
             label: $LL.projects(),
