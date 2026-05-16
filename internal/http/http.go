@@ -331,6 +331,14 @@ func New(apiService Service, FSS fs.FS, HFS http.FileSystem) *Service {
 	router.Handle("POST "+prefix+"/api/admin/service-accounts/{id}/apikeys", a.userOnly(a.adminOnly(a.handleGenerateServiceAccountKey())))
 	router.Handle("GET "+prefix+"/api/branding", a.handleGetBranding())
 	router.Handle("GET "+prefix+"/api/branding/logo", a.handleGetBrandingLogo())
+
+	// MCP endpoint (Streamable HTTP). Auth via the same X-API-Key the REST API
+	// uses — typically a service account's key.
+	router.Handle("POST "+prefix+"/mcp", a.userOnly(a.handleMCP()))
+	router.HandleFunc("GET "+prefix+"/mcp", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Allow", "POST")
+		http.Error(w, "MCP server uses POST (Streamable HTTP, no SSE stream)", http.StatusMethodNotAllowed)
+	})
 	router.Handle("GET "+prefix+"/api/admin/admin-users", a.userOnly(a.adminOnly(a.handleListAdminUsers())))
 	router.Handle("GET "+prefix+"/api/admin/users", a.userOnly(a.adminOnly(a.handleGetRegisteredUsers())))
 	router.Handle("POST "+prefix+"/api/admin/users", a.userOnly(a.adminOnly(a.handleUserCreate())))
